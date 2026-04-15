@@ -54,7 +54,7 @@ install(EXPORT QtWhisperTargets
 
 # D. Generate Config and Version files using your .cmake.in template
 configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/share/cmake/QtWhisperConfig.cmake.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/QtWhisperConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/QtWhisperConfig.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/QtWhisper
 )
