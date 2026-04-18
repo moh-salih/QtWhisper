@@ -25,7 +25,7 @@ namespace QtWhisper {
     enum class Mode {
         Live,   // low-latency streaming, single segment per window
         File    // accuracy-optimised, full multi-segment output
-    }
+    };
 
 
     struct Config {
