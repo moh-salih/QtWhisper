@@ -21,6 +21,13 @@ namespace QtWhisper {
     };
     Q_ENUM_NS(Status);
 
+
+    enum class Mode {
+        Live,   // low-latency streaming, single segment per window
+        File    // accuracy-optimised, full multi-segment output
+    }
+
+
     struct Config {
         QString         modelPath;
         bool            useGpu                  = true;
@@ -30,6 +37,7 @@ namespace QtWhisper {
         int             maxTokens               = 256;
         int             threadCount             = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
         float           temperature             = 0.0f;
+        Mode            mode                    = Mode::Live;
     };
 
 } // namespace QtWhisper

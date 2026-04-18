@@ -75,8 +75,10 @@ void Engine::processWindow(const std::vector<float> &samples) {
     p.translate                = mConfig->translate;
     p.max_tokens               = mConfig->maxTokens;
     p.n_threads                = mConfig->threadCount;
-    p.no_context               = true;
-    p.single_segment           = true;
+    p.no_context               = mConfig->mode == Mode::Live;
+    p.single_segment           = mConfig->mode == Mode::Live;
+    p.token_timestamps         = mConfig->mode == Mode::File;
+    p.temperature_inc          = mConfig->mode == Mode::Live ? 0.0f : 0.2f;
     p.print_progress           = false;
     p.temperature              = mConfig->temperature;
     p.suppress_blank           = true;

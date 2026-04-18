@@ -44,8 +44,10 @@ public slots:
     void resumeInference();
 
     void stopInference();
+    void transcribeFile(const QString &path);
 
 signals:
+    void transcriptionProgressChanged(float progress); // 0.0 – 1.0
     void statusChanged(QtWhisper::Status status);
     void processingBusyChanged(bool isProcessing);
     void transcriptionChanged(const QString &fullText);
