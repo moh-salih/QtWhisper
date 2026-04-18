@@ -1,10 +1,8 @@
 #pragma once
-
 #include <QObject>
 #include <QThread>
 #include <QString>
 #include <QSharedPointer>
-
 #include <QtWhisper/IEngine.h>
 #include <QtWhisper/Types.h>
 
@@ -12,46 +10,61 @@ namespace QtWhisper {
 
 class Session : public QObject {
     Q_OBJECT
-    Q_PROPERTY(QString transcription READ transcription NOTIFY transcriptionChanged)
-    Q_PROPERTY(QtWhisper::Status status READ status NOTIFY statusChanged)
-    Q_PROPERTY(QString statusText READ statusText NOTIFY statusChanged)
 
 public:
     explicit Session(QObject *parent = nullptr);
     ~Session() override;
 
-    void initialize(IEngine* engine);
-    void setConfig(const Config& config);
+    // Takes ownership of engine. engine must be heap-allocated and must not be
+    // parented, moved, or deleted externally after this call. Calling
+    // initialize() more than once is a programming error.
+    void initialize(IEngine *engine);
+
+    // May be called before or after initialize(). Changes to language,
+    // threadCount, etc. take effect on the next loadModel() call — they do
+    // not hot-reload a model that is already running.
+    void setConfig(const Config &config);
+
     void loadModel();
     void unloadModel();
+    void clear();
 
-    QString transcription() const { return mTranscription; }
-    QtWhisper::Status status() const { return mStatus; }
-    QString statusText() const;
-
-    Q_INVOKABLE void clear();
+    QString           transcription() const { return mTranscription; }
+    bool              isProcessing()  const { return mIsProcessing; }
+    QtWhisper::Status status()        const { return mStatus; }
+    QString           statusText()    const;
 
 public slots:
+    // Submits an audio window for inference. If the engine is still processing
+    // a previous window the call is a no-op and audioWindowDropped() is emitted.
     void processAudioWindow(const std::vector<float> &samples);
-    void startInference();
+
+    // Clears the abort flag after stopInference() so subsequent
+    // processAudioWindow() calls are accepted again.
+    void resumeInference();
+
     void stopInference();
 
 signals:
-    void transcriptionChanged(const QString& text);
-    void statusChanged();
-    void partialResult(const QString& text);
-    void errorOccurred(const QString& msg);
+    void statusChanged(QtWhisper::Status status);
+    void processingBusyChanged(bool isProcessing);
+    void transcriptionChanged(const QString &fullText);
+    void segmentTranscribed(const QString &segment);
+    void errorEncountered(const QString &message);
+    void audioWindowDropped();
 
 private slots:
-    void onPartialResult(const QString& text);
+    void onSegmentTranscribed(const QString &segment);
+    void onProcessingBusyChanged(bool isProcessing);
+    void onStatusChanged(QtWhisper::Status status);
 
 private:
-    IEngine                   * mEngine       = nullptr;
-    QThread                   * mWorkerThread = nullptr;
-    QtWhisper::Status           mStatus       = QtWhisper::Status::Idle;
-    QSharedPointer<Config>      mConfig       = QSharedPointer<Config>::create();
-
-    QString                     mTranscription;
+    IEngine               *mEngine       = nullptr;
+    QThread               *mWorkerThread = nullptr;
+    QtWhisper::Status      mStatus       = QtWhisper::Status::Idle;
+    QSharedPointer<Config> mConfig       = QSharedPointer<Config>::create();
+    QString                mTranscription;
+    bool                   mIsProcessing = false;
 };
 
 } // namespace QtWhisper

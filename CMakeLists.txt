@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 
 project(QtWhisper VERSION 1.0.0 LANGUAGES CXX)
 
+# Options
+option(QtWhisper_BUILD_EXAMPLES "Build QtWhisper examples" OFF)
+
+
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(whisper REQUIRED)
 
@@ -26,6 +30,21 @@ target_include_directories(QtWhisper PUBLIC
 target_link_libraries(QtWhisper PUBLIC Qt6::Core whisper)
 
 set_target_properties(QtWhisper PROPERTIES AUTOMOC ON CXX_STANDARD 23)
+
+
+
+
+
+
+
+
+
+
+
+if(QtWhisper_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
 
 # ==============================================================================
 # INSTALLATION & EXPORT LOGIC
