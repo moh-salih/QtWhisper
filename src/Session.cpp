@@ -34,6 +34,7 @@ void Session::initialize(IEngine *engine) {
             this,    &Session::onProcessingBusyChanged);
     connect(mEngine, &IEngine::errorEncountered,
             this,    &Session::errorEncountered);
+    connect(mEngine, &IEngine::reloadRequired, this, &Session::reloadRequired);
 
     connect(mWorkerThread, &QThread::finished, mEngine, &QObject::deleteLater);
     mWorkerThread->start();
@@ -58,6 +59,10 @@ void Session::loadModel() {
 void Session::unloadModel() {
     stopInference();
     QMetaObject::invokeMethod(mEngine, "unloadModel");
+}
+
+void Session::reloadModel() {
+    QMetaObject::invokeMethod(mEngine, "reloadModel");
 }
 
 void Session::processAudioWindow(const std::vector<float> &samples) {

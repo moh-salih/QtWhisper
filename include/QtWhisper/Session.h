@@ -27,6 +27,7 @@ public:
 
     void loadModel();
     void unloadModel();
+    void reloadModel();
     void clear();
 
     QString           transcription() const { return mTranscription; }
@@ -53,6 +54,7 @@ signals:
     void segmentTranscribed(const QString &segment);
     void errorEncountered(const QString &message);
     void audioWindowDropped();
+    void reloadRequired();
 
 private slots:
     void onSegmentTranscribed(const QString &segment);

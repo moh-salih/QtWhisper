@@ -17,6 +17,7 @@ namespace QtWhisper {
         void setConfig(QSharedPointer<Config> config) override;
         void loadModel() override;
         void unloadModel() override;
+        void reloadModel() override;
         void processWindow(const std::vector<float> &samples) override;
         void stop() override;
         void reset() override;
@@ -28,6 +29,13 @@ namespace QtWhisper {
         std::atomic<bool>       m_abortRequested{false};
         QSharedPointer<Config>  mConfig;
         std::string             mLanguageStd;
+
+
+
+
+
+        bool requiresReload(const Config& next, const Config& current) const;
+
     };
 
 } // namespace QtWhisper

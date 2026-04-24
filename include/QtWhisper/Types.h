@@ -38,6 +38,7 @@ namespace QtWhisper {
         int             threadCount             = std::min(4, static_cast<int>(std::thread::hardware_concurrency()));
         float           temperature             = 0.0f;
         Mode            mode                    = Mode::Live;
+        bool            autoReload              = true;
     };
 
 } // namespace QtWhisper

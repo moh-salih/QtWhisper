@@ -9,9 +9,27 @@ Engine::~Engine() {
     if (m_ctx) whisper_free(m_ctx);
 }
 
+bool Engine::requiresReload(const Config& next, const Config& current) const {
+    return next.modelPath != current.modelPath
+        || next.useGpu    != current.useGpu;
+}
+
 void Engine::setConfig(QSharedPointer<Config> config) {
+    const bool needsReload = mConfig && requiresReload(*config, *mConfig);
     mConfig      = config;
     mLanguageStd = config->language.toStdString();
+
+    if (needsReload && m_ctx != nullptr) {
+        if (mConfig->autoReload)
+            reloadModel();
+        else
+            emit reloadRequired();
+    }
+}
+
+void Engine::reloadModel() {
+    unloadModel();
+    loadModel();
 }
 
 bool Engine::abort_callback(void *user_data) {
