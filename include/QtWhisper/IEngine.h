@@ -26,7 +26,7 @@ namespace QtWhisper {
         void segmentTranscribed(const QString &segment);
         void statusChanged(QtWhisper::Status status);
         void processingBusyChanged(bool isProcessing);
-        void errorEncountered(const QString &message);
+        void errorOccurred(QtWhisper::Error error);
         void reloadRequired();
     };
 

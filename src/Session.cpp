@@ -19,6 +19,7 @@ void Session::initialize(IEngine *engine) {
 
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
     qRegisterMetaType<QtWhisper::Status>("QtWhisper::Status");
+    qRegisterMetaType<QtWhisper::Error>("QtWhisper::Error");
 
     mEngine = engine;
     mWorkerThread = new QThread(this);
@@ -26,15 +27,11 @@ void Session::initialize(IEngine *engine) {
     mEngine->moveToThread(mWorkerThread);
     mEngine->setConfig(mConfig);
 
-    connect(mEngine, &IEngine::segmentTranscribed,
-            this,    &Session::onSegmentTranscribed);
-    connect(mEngine, &IEngine::statusChanged,
-            this,    &Session::onStatusChanged);
-    connect(mEngine, &IEngine::processingBusyChanged,
-            this,    &Session::onProcessingBusyChanged);
-    connect(mEngine, &IEngine::errorEncountered,
-            this,    &Session::errorEncountered);
-    connect(mEngine, &IEngine::reloadRequired, this, &Session::reloadRequired);
+    connect(mEngine, &IEngine::segmentTranscribed,   this, &Session::onSegmentTranscribed);
+    connect(mEngine, &IEngine::statusChanged,        this, &Session::onStatusChanged);
+    connect(mEngine, &IEngine::processingBusyChanged,this, &Session::onProcessingBusyChanged);
+    connect(mEngine, &IEngine::errorOccurred,        this, &Session::errorOccurred);
+    connect(mEngine, &IEngine::reloadRequired,       this, &Session::reloadRequired);
 
     connect(mWorkerThread, &QThread::finished, mEngine, &QObject::deleteLater);
     mWorkerThread->start();
@@ -42,10 +39,6 @@ void Session::initialize(IEngine *engine) {
 
 void Session::setConfig(const Config &config) {
     *mConfig = config;
-
-    // If the worker is already live, push the updated config across to the
-    // engine thread. Config changes only take effect on the next loadModel()
-    // call — the running model is not reloaded.
     if (mWorkerThread)
         QMetaObject::invokeMethod(mEngine, "setConfig",
                                   Q_ARG(QSharedPointer<Config>, mConfig));

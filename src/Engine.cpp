@@ -1,4 +1,5 @@
 #include <QtWhisper/Engine.h>
+#include <QtWhisper/Types.h>
 #include <QDebug>
 
 namespace QtWhisper {
@@ -38,14 +39,12 @@ bool Engine::abort_callback(void *user_data) {
 }
 
 void Engine::loadModel() {
-    // unloadModel() sets m_abortRequested=true to stop any in-flight inference.
-    // processWindow() resets it at entry, so no reset is needed here.
     unloadModel();
     emit statusChanged(Status::Loading);
 
     if (!mConfig || mConfig->modelPath.isEmpty()) {
-        qCritical() << "QtWhisper: model path is empty.";
-        emit errorEncountered(tr("Model path is not configured."));
+        qCritical() << "QtWhisper:" << errorToString(Error::ModelPathEmpty);
+        emit errorOccurred(Error::ModelPathEmpty);
         emit statusChanged(Status::Error);
         return;
     }
@@ -67,7 +66,8 @@ void Engine::loadModel() {
         mConfig->modelPath.toStdString().c_str(), params);
 
     if (!m_ctx) {
-        emit errorEncountered(tr("Failed to load Whisper model."));
+        qCritical() << "QtWhisper:" << errorToString(Error::ModelLoadFailed);
+        emit errorOccurred(Error::ModelLoadFailed);
         emit statusChanged(Status::Error);
         return;
     }
@@ -78,16 +78,11 @@ void Engine::loadModel() {
 void Engine::processWindow(const std::vector<float> &samples) {
     if (!m_ctx || samples.empty()) return;
 
-    // Always reset before a run. m_abortRequested may be true from a prior
-    // stop() or unloadModel() call — clearing it here means the caller doesn't
-    // need to call reset() explicitly before every window.
     m_abortRequested.store(false);
     emit processingBusyChanged(true);
 
     whisper_full_params p = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 
-    // p.language must point to a buffer that outlives the whisper_full() call.
-    // mLanguageStd is a member, so its lifetime is guaranteed.
     p.language                 = mLanguageStd.c_str();
     p.detect_language          = mConfig->autoDetectLanguage;
     p.translate                = mConfig->translate;
@@ -115,15 +110,14 @@ void Engine::processWindow(const std::vector<float> &samples) {
         if (!text.trimmed().isEmpty())
             emit segmentTranscribed(text.trimmed());
     } else if (rc != 0) {
-        emit errorEncountered(tr("Whisper inference failed."));
+        qCritical() << "QtWhisper:" << errorToString(Error::InferenceFailed);
+        emit errorOccurred(Error::InferenceFailed);
     }
 
     emit processingBusyChanged(false);
 }
 
 void Engine::unloadModel() {
-    // The abort flag stops any whisper_full() in progress via abort_callback.
-    // processWindow() resets it before each run, so this is safe to leave set.
     m_abortRequested.store(true);
     if (m_ctx) { whisper_free(m_ctx); m_ctx = nullptr; }
     emit statusChanged(Status::Idle);

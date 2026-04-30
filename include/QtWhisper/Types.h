@@ -4,11 +4,7 @@
 #include <thread>
 #include <algorithm>
 #include <vector>
-
-
-
 #include <QMetaType>
-
 
 namespace QtWhisper {
     Q_NAMESPACE
@@ -21,12 +17,17 @@ namespace QtWhisper {
     };
     Q_ENUM_NS(Status);
 
+    enum class Error {
+        ModelPathEmpty,
+        ModelLoadFailed,
+        InferenceFailed
+    };
+    Q_ENUM_NS(Error);
 
     enum class Mode {
-        Live,   // low-latency streaming, single segment per window
-        File    // accuracy-optimised, full multi-segment output
+        Live,
+        File
     };
-
 
     struct Config {
         QString         modelPath;
@@ -41,10 +42,18 @@ namespace QtWhisper {
         bool            autoReload              = true;
     };
 
+    inline QString errorToString(Error error) {
+        switch (error) {
+            case Error::ModelPathEmpty:   return "Model path is not configured.";
+            case Error::ModelLoadFailed:  return "Failed to load Whisper model.";
+            case Error::InferenceFailed:  return "Whisper inference failed.";
+            default:                      return "Unknown error.";
+        }
+    }
+
 } // namespace QtWhisper
+
 #ifndef Q_META_TYPE_STD_VECTOR_FLOAT_DECLARED
 #define Q_META_TYPE_STD_VECTOR_FLOAT_DECLARED
     Q_DECLARE_METATYPE(std::vector<float>)
 #endif
-
-

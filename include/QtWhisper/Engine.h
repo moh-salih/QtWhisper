@@ -30,12 +30,7 @@ namespace QtWhisper {
         QSharedPointer<Config>  mConfig;
         std::string             mLanguageStd;
 
-
-
-
-
         bool requiresReload(const Config& next, const Config& current) const;
-
     };
 
 } // namespace QtWhisper
