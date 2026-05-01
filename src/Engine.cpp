@@ -14,19 +14,26 @@ bool Engine::requiresReload(const Config& next, const Config& current) const {
     return next.modelPath != current.modelPath
         || next.useGpu    != current.useGpu;
 }
+void Engine::setConfig(QSharedPointer<Config> newConfig) {
+    const bool hadNoModel = !mConfig || mConfig->modelPath.isEmpty();
+    const bool needsReload = mConfig && !mConfig->modelPath.isEmpty() && requiresReload(*newConfig, *mConfig);
+    mConfig = newConfig;
 
-void Engine::setConfig(QSharedPointer<Config> config) {
-    const bool needsReload = mConfig && requiresReload(*config, *mConfig);
-    mConfig      = config;
-    mLanguageStd = config->language.toStdString();
-
-    if (needsReload && m_ctx != nullptr) {
+    if (!m_ctx) {
+        // Model not loaded yet — load now if we have a path
+        if (!mConfig->modelPath.isEmpty()) {
+            loadModel();
+        }
+    } else if (needsReload) {
         if (mConfig->autoReload)
             reloadModel();
         else
             emit reloadRequired();
+    } else {
+        buildSampler();
     }
 }
+
 
 void Engine::reloadModel() {
     unloadModel();
