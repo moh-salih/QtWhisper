@@ -36,9 +36,10 @@ void Session::initialize(IEngine *engine) {
     connect(mWorkerThread, &QThread::finished, mEngine, &QObject::deleteLater);
     mWorkerThread->start();
 }
-
 void Session::setConfig(const Config &config) {
-    *mConfig = config;
+    // Create a new shared pointer so the engine's copy stays unchanged
+    // until it processes the setConfig call on its thread
+    mConfig = QSharedPointer<Config>::create(config);
     if (mWorkerThread)
         QMetaObject::invokeMethod(mEngine, "setConfig",
                                   Q_ARG(QSharedPointer<Config>, mConfig));
