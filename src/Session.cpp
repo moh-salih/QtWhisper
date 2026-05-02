@@ -14,8 +14,7 @@ Session::~Session() {
 }
 
 void Session::initialize(IEngine *engine) {
-    Q_ASSERT_X(!mWorkerThread, "Session::initialize",
-               "initialize() called more than once — Session takes ownership on first call");
+    Q_ASSERT_X(!mWorkerThread, "Session::initialize", "initialize() called more than once — Session takes ownership on first call");
 
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
     qRegisterMetaType<QtWhisper::Status>("QtWhisper::Status");
@@ -25,7 +24,6 @@ void Session::initialize(IEngine *engine) {
     mWorkerThread = new QThread(this);
     mEngine->setParent(nullptr);
     mEngine->moveToThread(mWorkerThread);
-    mEngine->setConfig(mConfig);
 
     connect(mEngine, &IEngine::segmentTranscribed,   this, &Session::onSegmentTranscribed);
     connect(mEngine, &IEngine::statusChanged,        this, &Session::onStatusChanged);
@@ -36,13 +34,12 @@ void Session::initialize(IEngine *engine) {
     connect(mWorkerThread, &QThread::finished, mEngine, &QObject::deleteLater);
     mWorkerThread->start();
 }
+
+
 void Session::setConfig(const Config &config) {
-    // Create a new shared pointer so the engine's copy stays unchanged
-    // until it processes the setConfig call on its thread
     mConfig = QSharedPointer<Config>::create(config);
     if (mWorkerThread)
-        QMetaObject::invokeMethod(mEngine, "setConfig",
-                                  Q_ARG(QSharedPointer<Config>, mConfig));
+        QMetaObject::invokeMethod(mEngine, "setConfig", Q_ARG(QSharedPointer<Config>, mConfig));
 }
 
 void Session::loadModel() {

@@ -15,21 +15,22 @@ bool Engine::requiresReload(const Config& next, const Config& current) const {
         || next.useGpu    != current.useGpu;
 }
 void Engine::setConfig(QSharedPointer<Config> config) {
-    const bool needsReload = mConfig && !mConfig->modelPath.isEmpty() && requiresReload(*config, *mConfig);
+    const bool hasExistingModel = m_ctx != nullptr;
+    const bool needsReload = hasExistingModel && requiresReload(*config, *mConfig);
+
     mConfig = config;
     mLanguageStd = config->language.toStdString();
 
-    if (!m_ctx) {
-        if (!mConfig->modelPath.isEmpty())
-            loadModel();
-    } else if (needsReload) {
+    // Only trigger a reload on an *already-loaded* model when params change.
+    // Never auto-load on first setConfig — let loadModel() be the explicit gate.
+    if (needsReload) {
         if (mConfig->autoReload)
             reloadModel();
         else
             emit reloadRequired();
     }
+    // If m_ctx == nullptr, do nothing — caller must invoke loadModel() explicitly.
 }
-
 
 
 void Engine::reloadModel() {
