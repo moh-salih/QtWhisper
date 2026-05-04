@@ -14,6 +14,7 @@ bool Engine::requiresReload(const Config& next, const Config& current) const {
     return next.modelPath != current.modelPath
         || next.useGpu    != current.useGpu;
 }
+
 void Engine::setConfig(QSharedPointer<Config> config) {
     const bool hasExistingModel = m_ctx != nullptr;
     const bool needsReload = hasExistingModel && requiresReload(*config, *mConfig);
@@ -21,25 +22,21 @@ void Engine::setConfig(QSharedPointer<Config> config) {
     mConfig = config;
     mLanguageStd = config->language.toStdString();
 
-    // Only trigger a reload on an *already-loaded* model when params change.
-    // Never auto-load on first setConfig — let loadModel() be the explicit gate.
     if (needsReload) {
         if (mConfig->autoReload)
             reloadModel();
         else
             emit reloadRequired();
     }
-    // If m_ctx == nullptr, do nothing — caller must invoke loadModel() explicitly.
 }
-
 
 void Engine::reloadModel() {
     unloadModel();
     loadModel();
 }
 
-bool Engine::abort_callback(void *user_data) {
-    auto *engine = static_cast<Engine *>(user_data);
+bool Engine::abort_callback(void* user_data) {
+    auto* engine = static_cast<Engine*>(user_data);
     return engine ? engine->m_abortRequested.load() : false;
 }
 
@@ -80,11 +77,11 @@ void Engine::loadModel() {
     emit statusChanged(Status::Ready);
 }
 
-void Engine::processWindow(const std::vector<float> &samples) {
-    if (!m_ctx || samples.empty()) return;
+void Engine::processWindow(const QVector<float>& samples) {
+    if (!m_ctx || samples.isEmpty()) return;
 
     m_abortRequested.store(false);
-    emit processingBusyChanged(true);
+    emit isProcessingChanged(true);
 
     whisper_full_params p = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 
@@ -104,7 +101,7 @@ void Engine::processWindow(const std::vector<float> &samples) {
     p.abort_callback_user_data = this;
 
     const int rc = whisper_full(m_ctx, p,
-                                samples.data(),
+                                samples.constData(),
                                 static_cast<int>(samples.size()));
 
     if (!m_abortRequested.load() && rc == 0) {
@@ -119,7 +116,7 @@ void Engine::processWindow(const std::vector<float> &samples) {
         emit errorOccurred(Error::InferenceFailed);
     }
 
-    emit processingBusyChanged(false);
+    emit isProcessingChanged(false);
 }
 
 void Engine::unloadModel() {
@@ -128,7 +125,7 @@ void Engine::unloadModel() {
     emit statusChanged(Status::Idle);
 }
 
-void Engine::stop()  { m_abortRequested.store(true); }
+void Engine::stop()  { m_abortRequested.store(true);  }
 void Engine::reset() { m_abortRequested.store(false); }
 
 } // namespace QtWhisper

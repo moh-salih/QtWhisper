@@ -13,10 +13,11 @@ Session::~Session() {
     }
 }
 
-void Session::initialize(IEngine *engine) {
-    Q_ASSERT_X(!mWorkerThread, "Session::initialize", "initialize() called more than once — Session takes ownership on first call");
+void Session::initialize(IEngine* engine) {
+    Q_ASSERT_X(!mWorkerThread, "Session::initialize",
+               "initialize() called more than once — Session takes ownership on first call");
 
-    qRegisterMetaType<std::vector<float>>("std::vector<float>");
+    qRegisterMetaType<QVector<float>>("QVector<float>");
     qRegisterMetaType<QtWhisper::Status>("QtWhisper::Status");
     qRegisterMetaType<QtWhisper::Error>("QtWhisper::Error");
 
@@ -25,21 +26,21 @@ void Session::initialize(IEngine *engine) {
     mEngine->setParent(nullptr);
     mEngine->moveToThread(mWorkerThread);
 
-    connect(mEngine, &IEngine::segmentTranscribed,   this, &Session::onSegmentTranscribed);
-    connect(mEngine, &IEngine::statusChanged,        this, &Session::onStatusChanged);
-    connect(mEngine, &IEngine::processingBusyChanged,this, &Session::onProcessingBusyChanged);
-    connect(mEngine, &IEngine::errorOccurred,        this, &Session::errorOccurred);
-    connect(mEngine, &IEngine::reloadRequired,       this, &Session::reloadRequired);
+    connect(mEngine, &IEngine::segmentTranscribed,  this, &Session::onSegmentTranscribed);
+    connect(mEngine, &IEngine::statusChanged,       this, &Session::onStatusChanged);
+    connect(mEngine, &IEngine::isProcessingChanged, this, &Session::onIsProcessingChanged);
+    connect(mEngine, &IEngine::errorOccurred,       this, &Session::errorOccurred);
+    connect(mEngine, &IEngine::reloadRequired,      this, &Session::reloadRequired);
 
     connect(mWorkerThread, &QThread::finished, mEngine, &QObject::deleteLater);
     mWorkerThread->start();
 }
 
-
-void Session::setConfig(const Config &config) {
+void Session::setConfig(const Config& config) {
     mConfig = QSharedPointer<Config>::create(config);
     if (mWorkerThread)
-        QMetaObject::invokeMethod(mEngine, "setConfig", Q_ARG(QSharedPointer<Config>, mConfig));
+        QMetaObject::invokeMethod(mEngine, "setConfig",
+                                  Q_ARG(QSharedPointer<Config>, mConfig));
 }
 
 void Session::loadModel() {
@@ -56,8 +57,8 @@ void Session::reloadModel() {
     QMetaObject::invokeMethod(mEngine, "reloadModel");
 }
 
-void Session::processAudioWindow(const std::vector<float> &samples) {
-    if (mStatus != Status::Ready || samples.empty()) return;
+void Session::processAudioWindow(const QVector<float>& samples) {
+    if (mStatus != Status::Ready || samples.isEmpty()) return;
 
     if (mIsProcessing) {
         emit audioWindowDropped();
@@ -65,7 +66,7 @@ void Session::processAudioWindow(const std::vector<float> &samples) {
     }
 
     QMetaObject::invokeMethod(mEngine, "processWindow",
-                              Q_ARG(std::vector<float>, samples));
+                              Q_ARG(QVector<float>, samples));
 }
 
 void Session::resumeInference() {
@@ -81,17 +82,17 @@ void Session::clear() {
     emit transcriptionChanged(mTranscription);
 }
 
-void Session::onSegmentTranscribed(const QString &segment) {
+void Session::onSegmentTranscribed(const QString& segment) {
     if (segment.isEmpty()) return;
     mTranscription += (mTranscription.isEmpty() ? "" : " ") + segment;
     emit transcriptionChanged(mTranscription);
     emit segmentTranscribed(segment);
 }
 
-void Session::onProcessingBusyChanged(bool isProcessing) {
+void Session::onIsProcessingChanged(bool isProcessing) {
     if (mIsProcessing == isProcessing) return;
     mIsProcessing = isProcessing;
-    emit processingBusyChanged(isProcessing);
+    emit isProcessingChanged(isProcessing);
 }
 
 void Session::onStatusChanged(QtWhisper::Status status) {
